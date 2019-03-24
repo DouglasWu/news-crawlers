@@ -3,10 +3,10 @@ import scrapy
 from bs4 import BeautifulSoup as bs
 import datetime
 from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
-import re
 
-archive_url = 'http://tw.appledaily.com/appledaily/archive/{}'
-host_url = 'http://tw.appledaily.com'
+HOST_URL = 'http://tw.appledaily.com'
+ARCHIVE_URL = 'http://tw.appledaily.com/appledaily/archive/{}'
+CP_NAME = '蘋果日報'
 
 def get_start_urls(start_date, end_date):
     date_strings = []
@@ -14,7 +14,7 @@ def get_start_urls(start_date, end_date):
         date_strings.append(single_date.strftime("%Y%m%d"))
     urls = []
     for date_str in date_strings:
-        urls.append(archive_url.format(date_str))
+        urls.append(ARCHIVE_URL.format(date_str))
     return urls
 
 class AppleSpider(scrapy.Spider):
@@ -40,22 +40,44 @@ class AppleSpider(scrapy.Spider):
         for link in links:
             url = link
             if 'appledaily.com' not in link:
-                url = host_url + url
+                url = HOST_URL + url
             yield scrapy.Request(url, callback=self.parse_page)
 
     def parse_page(self, response):
-        soup = bs(response.body, 'lxml')
-        title = soup.select('hgroup h1')[0].text.strip()
-        date = soup.select('hgroup .ndArticle_creat')[0].text.strip().split('：')[1]
-        date = date.replace('/', '-')
-        cat = soup.select('.ndgTag .current')[0].text.strip()
         url = response.url
+        soup = bs(response.body, 'lxml')
+
+        # 地產新聞
+        if 'home.appledaily.com' in url:
+            title = soup.select('.ncbox_cont > h1')[0].text.strip()
+            date = soup.select('.nctimeshare time')[0]['datetime'][:-1]
+            date = date.replace('/', '-')
+            cat = '地產'
+            text = '\n'.join([p.text.strip() for p in soup.select('.articulum p') if p.text.strip()!='']).strip()
+
+        else:
+            title = soup.select('hgroup h1')[0].text.strip()
+            date = soup.select('hgroup .ndArticle_creat')[0].text.strip().split('：')[1]
+            date = date.replace('/', '-')
         
-        # clean script tags
-        useless_tags = ['.ndArticle_content script', '.ndArticle_moreNewlist','.ndArticle_pagePrev', '.ndArticle_pageNext']
-        for tag in useless_tags:
-            [e.extract() for e in soup.select(tag)]
+            try:
+                cat = soup.select('.ndgTag .current')[0].text.strip()
+            except:
+                if 'adcontent' in url:
+                    cat = '工商消息'
 
-        text = '\n'.join([p.text.strip() for p in soup.select('.ndArticle_margin p')]).strip()
+            # clean script tags
+            useless_tags = ['.ndArticle_content script', '.ndArticle_moreNewlist','.ndArticle_pagePrev', '.ndArticle_pageNext']
+            for tag in useless_tags:
+                [e.extract() for e in soup.select(tag)]
 
-        yield {'title': title, 'date': date, 'url': url, 'text': text, 'cat': get_general_cat(cat)}
+            text = '\n'.join([p.text.strip() for p in soup.select('.ndArticle_margin p') if p.text.strip()!='']).strip()
+
+        yield {
+            'title': title,
+            'date': date,
+            'url': url,
+            'text': text,
+            'cat': get_general_cat(cat),
+            'cp': CP_NAME
+        }

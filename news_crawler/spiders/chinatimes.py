@@ -4,8 +4,9 @@ from bs4 import BeautifulSoup as bs
 import datetime
 from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
 
-host_url = 'http://www.chinatimes.com';
-archive_url = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
+HOST_URL = 'http://www.chinatimes.com';
+ARCHIVE_URL = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
+CP_NAME = '中國時報'
 
 def get_start_urls(start_date, end_date):
     date_strings = []
@@ -14,7 +15,7 @@ def get_start_urls(start_date, end_date):
     urls = []
     for date_str in date_strings:
         for aid in range(1,5):
-            urls.append(archive_url.format(date_str, aid, 1))
+            urls.append(ARCHIVE_URL.format(date_str, aid, 1))
     return urls
 
 class ChinaTimesSpider(scrapy.Spider):
@@ -36,7 +37,7 @@ class ChinaTimesSpider(scrapy.Spider):
     def parse(self, response):
         soup = bs(response.body, 'lxml')
         # get all the links in the archive page
-        links = [host_url+link['href'] for link in soup.select('.listRight li h2 a')]
+        links = [HOST_URL+link['href'] for link in soup.select('.listRight li h2 a')]
         for link in links:
             yield scrapy.Request(link, callback=self.parse_page)
 
@@ -53,6 +54,13 @@ class ChinaTimesSpider(scrapy.Spider):
         date = date.replace('/', '-')
         cat = soup.select('.page_index li')[-1].text.strip()
         url = response.url
-        text = '\n'.join([p.text.strip() for p in soup.select('article p')]).strip()
+        text = '\n'.join([p.text.strip() for p in soup.select('article p') if p.text.strip()!='']).strip()
 
-        yield {'title': title, 'date': date, 'url': url, 'text': text, 'cat': get_general_cat(cat)}
+        yield {
+            'title': title,
+            'date': date,
+            'url': url,
+            'text': text,
+            'cat': get_general_cat(cat),
+            'cp': CP_NAME
+        }

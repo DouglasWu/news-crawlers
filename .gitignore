@@ -11,3 +11,4 @@ __pycache__/
 
 # Custom
 data/
+*.log
