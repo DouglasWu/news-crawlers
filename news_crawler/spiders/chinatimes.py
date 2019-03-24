@@ -2,7 +2,7 @@
 import scrapy
 from bs4 import BeautifulSoup as bs
 import datetime
-from news_crawler.spiders.utils import daterange, get_general_cat
+from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
 
 host_url = 'http://www.chinatimes.com';
 archive_url = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
@@ -20,7 +20,7 @@ def get_start_urls(start_date, end_date):
 class ChinaTimesSpider(scrapy.Spider):
     name = "chinatimes"
     
-    def __init__(self, st='2019-03-21', ed='2019-03-22', out='data', *args, **kwargs):
+    def __init__(self, st=yesterday_date(), ed=today_date(), out='data', *args, **kwargs):
         super(ChinaTimesSpider, self).__init__(*args, **kwargs)
         try:
             start_date = datetime.datetime.strptime(st, '%Y-%m-%d')
@@ -30,8 +30,8 @@ class ChinaTimesSpider(scrapy.Spider):
         
         # get all archive pages of a specific date range
         self.start_urls = get_start_urls(start_date, end_date)
-        self.post_path = '{}/chinatimes_{}_{}.json'.format(out, st, ed)
-        self.lines_path = '{}/chinatimes_{}_{}.json.lines'.format(out, st, ed)
+        self.directory =  out
+        self.file = 'news_chinatimes_{}_{}.json.lines'.format(st, ed)
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')

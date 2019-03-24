@@ -2,7 +2,7 @@
 import scrapy
 from bs4 import BeautifulSoup as bs
 import datetime
-from news_crawler.spiders.utils import daterange, get_general_cat
+from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
 import re
 
 archive_url = 'http://tw.appledaily.com/appledaily/archive/{}'
@@ -20,7 +20,7 @@ def get_start_urls(start_date, end_date):
 class AppleSpider(scrapy.Spider):
     name = "apple"
     
-    def __init__(self, st='2019-03-21', ed='2019-03-22', out='data', *args, **kwargs):
+    def __init__(self, st=yesterday_date(), ed=today_date(), out='data', *args, **kwargs):
         super(AppleSpider, self).__init__(*args, **kwargs)
         try:
             start_date = datetime.datetime.strptime(st, '%Y-%m-%d')
@@ -30,9 +30,8 @@ class AppleSpider(scrapy.Spider):
         
         # get all archive pages of a specific date range
         self.start_urls = get_start_urls(start_date, end_date)
-        self.post_path = '{}/apple_{}_{}.json'.format(out, st, ed)
-        self.lines_path = '{}/apple_{}_{}.json.lines'.format(out, st, ed)
-        
+        self.directory =  out
+        self.file = 'news_apple_{}_{}.json.lines'.format(st, ed)
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')

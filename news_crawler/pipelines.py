@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 
 # convert the dumped data into a real json file
 def jsonfy(in_path, out_path):
@@ -16,8 +17,11 @@ def jsonfy(in_path, out_path):
 
 # save crawled data to json
 class NewsCrawlerPipeline(object):
+
     def open_spider(self, spider):
-        self.fp = open(spider.lines_path, 'w')
+        if not os.path.exists(spider.directory):
+            os.makedirs(spider.directory)
+        self.fp = open(os.path.join(spider.directory, spider.file), 'w')
 
     def process_item(self, item, spider):
         line = json.dumps(item, ensure_ascii=False) + '\n'
@@ -26,5 +30,4 @@ class NewsCrawlerPipeline(object):
 
     def close_spider(self, spider):
         self.fp.close()
-        #jsonfy(spider.lines_path, spider.post_path)
 
