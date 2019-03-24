@@ -2,7 +2,9 @@
 import scrapy
 from bs4 import BeautifulSoup as bs
 import datetime
-from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
+from news_crawler.spiders.utils import (
+    daterange, today_date, yesterday_date, get_general_cat, select_image
+)
 
 HOST_URL = 'http://tw.appledaily.com'
 ARCHIVE_URL = 'http://tw.appledaily.com/appledaily/archive/{}'
@@ -47,18 +49,22 @@ class AppleSpider(scrapy.Spider):
         url = response.url
         soup = bs(response.body, 'lxml')
 
+        img = None
+
         # 地產新聞
         if 'home.appledaily.com' in url:
             title = soup.select('.ncbox_cont > h1')[0].text.strip()
             date = soup.select('.nctimeshare time')[0]['datetime'][:-1]
             date = date.replace('/', '-')
+            img = select_image(soup, '.articulum img')
             cat = '地產'
-            text = '\n'.join([p.text.strip() for p in soup.select('.articulum p') if p.text.strip()!='']).strip()
+            body = '\n'.join([p.text.strip() for p in soup.select('.articulum p') if p.text.strip()!='']).strip()
 
         else:
             title = soup.select('hgroup h1')[0].text.strip()
             date = soup.select('hgroup .ndArticle_creat')[0].text.strip().split('：')[1]
             date = date.replace('/', '-')
+            img = select_image(soup, '.ndAritcle_headPic img')
         
             try:
                 cat = soup.select('.ndgTag .current')[0].text.strip()
@@ -71,13 +77,14 @@ class AppleSpider(scrapy.Spider):
             for tag in useless_tags:
                 [e.extract() for e in soup.select(tag)]
 
-            text = '\n'.join([p.text.strip() for p in soup.select('.ndArticle_margin p') if p.text.strip()!='']).strip()
+            body = '\n'.join([p.text.strip() for p in soup.select('.ndArticle_margin p') if p.text.strip()!='']).strip()
 
         yield {
             'title': title,
             'date': date,
             'url': url,
-            'text': text,
+            'body': body,
+            'img': img,
             'cat': get_general_cat(cat),
             'cp': CP_NAME
         }

@@ -29,3 +29,9 @@ def get_general_cat(text):
             return cat
     
     return '其他'
+
+def select_image(soup, selector):
+    img_node = soup.select(selector)
+    if img_node:
+        return img_node[0]['src']
+    return None

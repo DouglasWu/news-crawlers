@@ -2,7 +2,9 @@
 import scrapy
 from bs4 import BeautifulSoup as bs
 import datetime
-from news_crawler.spiders.utils import daterange, today_date, yesterday_date, get_general_cat
+from news_crawler.spiders.utils import (
+    daterange, today_date, yesterday_date, get_general_cat, select_image
+)
 
 HOST_URL = 'http://www.chinatimes.com';
 ARCHIVE_URL = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
@@ -52,15 +54,17 @@ class ChinaTimesSpider(scrapy.Spider):
         title = soup.select('.topich1 h1')[0].text.strip()
         date = soup.select('.reporter time')[0]['datetime'].split()[0]
         date = date.replace('/', '-')
+        img = select_image(soup, 'article img')
         cat = soup.select('.page_index li')[-1].text.strip()
         url = response.url
-        text = '\n'.join([p.text.strip() for p in soup.select('article p') if p.text.strip()!='']).strip()
+        body = '\n'.join([p.text.strip() for p in soup.select('article p') if p.text.strip()!='']).strip()
 
         yield {
             'title': title,
             'date': date,
             'url': url,
-            'text': text,
+            'body': body,
+            'img': img,
             'cat': get_general_cat(cat),
             'cp': CP_NAME
         }
