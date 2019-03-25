@@ -28,7 +28,7 @@ class AppleSpider(scrapy.Spider):
         # get all archive pages of a specific date range
         self.start_urls = get_start_urls(st, ed)
         self.directory =  out
-        self.file = 'news_{}_{}_{}.json.lines'.format(self.name, st, ed)
+        self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
