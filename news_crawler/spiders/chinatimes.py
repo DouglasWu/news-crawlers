@@ -23,18 +23,13 @@ def get_start_urls(start_date, end_date):
 class ChinaTimesSpider(scrapy.Spider):
     name = "chinatimes"
     
-    def __init__(self, st=yesterday_date(), ed=today_date(), out='data', *args, **kwargs):
+    def __init__(self, st=yesterday_date(), ed=yesterday_date(), out='data', *args, **kwargs):
         super(ChinaTimesSpider, self).__init__(*args, **kwargs)
-        try:
-            start_date = datetime.datetime.strptime(st, '%Y-%m-%d')
-            end_date   = datetime.datetime.strptime(ed, '%Y-%m-%d')
-        except:
-            raise Exception('Incorrect date format!')
         
         # get all archive pages of a specific date range
-        self.start_urls = get_start_urls(start_date, end_date)
+        self.start_urls = get_start_urls(st, ed)
         self.directory =  out
-        self.file = 'news_chinatimes_{}_{}.json.lines'.format(st, ed)
+        self.file = 'news_{}_{}_{}.json.lines'.format(self.name, st, ed)
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
@@ -55,6 +50,9 @@ class ChinaTimesSpider(scrapy.Spider):
         date = soup.select('.reporter time')[0]['datetime'].split()[0]
         date = date.replace('/', '-')
         img = select_image(soup, 'article img')
+        if img and img.startswith('//'):
+            img = 'https:' + img
+
         cat = soup.select('.page_index li')[-1].text.strip()
         url = response.url
         body = '\n'.join([p.text.strip() for p in soup.select('article p') if p.text.strip()!='']).strip()

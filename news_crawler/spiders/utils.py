@@ -2,8 +2,23 @@
 
 from datetime import timedelta, datetime
 
-def daterange(start_date, end_date):
-    for n in range(int ((end_date - start_date).days)):
+def daterange(st, ed):
+    """ Yield a list of dates given the start and end point.
+    
+    Parameters
+    ----------
+    st : string
+        start date of format %Y-%m-%d
+    ed : string
+        end date of format %Y-%m-%d
+    """
+    try:
+        start_date = datetime.strptime(st, '%Y-%m-%d')
+        end_date   = datetime.strptime(ed, '%Y-%m-%d')
+    except:
+        raise Exception('Incorrect date format!')
+    
+    for n in range(int((end_date - start_date).days)+1):
         yield start_date + timedelta(n)
 
 def today_date():
@@ -13,6 +28,9 @@ def yesterday_date():
     return (datetime.now() + timedelta(-1)).strftime("%Y-%m-%d")
 
 def get_general_cat(text):
+    """ Classify the given text to one of the 9 main categories:
+    國內,論壇,生活,國際,藝文,娛樂,理財,科技,體育
+    """
     cat_map = {
         '國內': ['焦點要聞','政治要聞','社會新聞','地方新聞','產業特刊','焦點新聞','政治','社會','軍事','要聞'],
         '論壇': ['時論廣場','話題觀察','論壇廣場','論壇與專欄'],

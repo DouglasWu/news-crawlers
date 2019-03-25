@@ -22,18 +22,13 @@ def get_start_urls(start_date, end_date):
 class AppleSpider(scrapy.Spider):
     name = "apple"
     
-    def __init__(self, st=yesterday_date(), ed=today_date(), out='data', *args, **kwargs):
+    def __init__(self, st=yesterday_date(), ed=yesterday_date(), out='data', *args, **kwargs):
         super(AppleSpider, self).__init__(*args, **kwargs)
-        try:
-            start_date = datetime.datetime.strptime(st, '%Y-%m-%d')
-            end_date   = datetime.datetime.strptime(ed, '%Y-%m-%d')
-        except:
-            raise Exception('Incorrect date format!')
         
         # get all archive pages of a specific date range
-        self.start_urls = get_start_urls(start_date, end_date)
+        self.start_urls = get_start_urls(st, ed)
         self.directory =  out
-        self.file = 'news_apple_{}_{}.json.lines'.format(st, ed)
+        self.file = 'news_{}_{}_{}.json.lines'.format(self.name, st, ed)
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')

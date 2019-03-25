@@ -15,8 +15,8 @@ $ scrapy crawl CP [-a st=START_DATE] [-a ed=END_DATE] [-a out=OUTPUT_DIR]
 ```
 ### Symbol
 - `CP`: The content provider. `apple` for 蘋果日報; `chinatimes` for 中國時報.
-- `START_DATE`: The date of the earliest news article. Default is the date of yesterday.
-- `END_DATE`: The date of the latest news article(excluded). Default is the date of today.
+- `START_DATE`: The date of the earliest news article. Default is the date of **yesterday**.
+- `END_DATE`: The date of the latest news article. Default is the date of **yesterday**.
 - `OUTPUT_DIR`: The directory of the output json data. Defualt is `data`.
 
 ### Example
