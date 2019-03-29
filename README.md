@@ -26,6 +26,6 @@ $ scrapy crawl chinatimes
 ```
 To crawl the 蘋果日報 news articles from 2019-03-01 to 2019-03-20 , run:
 ```shell
-$ scrapy crawl apple -a st=2019-03-01 -a ed=2019-03-21
+$ scrapy crawl apple -a st=2019-03-01 -a ed=2019-03-20
 ```
 The crawled news articles will be saved as an [ndjson](http://ndjson.org/) file in `data/news_[CP]_[START_DATE]_[END_DATE].ndjson`
