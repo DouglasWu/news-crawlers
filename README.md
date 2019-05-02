@@ -7,22 +7,22 @@ A web crawler of news from a variety of content providers written with Scrapy.
 
 ## Supported content providers
 - [蘋果日報](http://tw.news.appledaily.com)
-- [中國時報](https://www.chinatimes.com)
+- ~~[中國時報](https://www.chinatimes.com)~~(網頁已改版)
 
 ## Run
 ```shell
 $ scrapy crawl CP [-a st=START_DATE] [-a ed=END_DATE] [-a out=OUTPUT_DIR]
 ```
 ### Symbol
-- `CP`: The content provider. `apple` for 蘋果日報; `chinatimes` for 中國時報.
+- `CP`: The content provider. `apple` for 蘋果日報.
 - `START_DATE`: The date of the earliest news article. Default is the date of **yesterday**.
 - `END_DATE`: The date of the latest news article. Default is the date of **yesterday**.
 - `OUTPUT_DIR`: The directory of the output json data. Defualt is `data`.
 
 ### Example
-To crawl the 中國時報 new articles yesterday, run:
+To crawl the 蘋果日報 new articles yesterday, run:
 ```shell
-$ scrapy crawl chinatimes
+$ scrapy crawl apple
 ```
 To crawl the 蘋果日報 news articles from 2019-03-01 to 2019-03-20 , run:
 ```shell

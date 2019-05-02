@@ -6,7 +6,10 @@ from news_crawler.spiders.utils import (
     daterange, today_date, yesterday_date, get_general_cat, select_image
 )
 
-HOST_URL = 'http://www.chinatimes.com';
+# TODO: The structure of the website has been changed.
+# Need to rewrite code.
+
+HOST_URL = 'http://www.chinatimes.com'
 ARCHIVE_URL = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
 CP_NAME = '中國時報'
 
