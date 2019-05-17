@@ -76,14 +76,14 @@ class LtnSpider(scrapy.Spider):
             'talk': {
                 'title': '.conbox h1',
                 'date': '.conbox .top_share .writer_date',
-                'body': '.whitecon.boxTitle .text p',
-                'img': '.whitecon.boxTitle .cont img',
+                'body': '.conbox .cont p',
+                'img': '.conbox .cont img',
                 'cat': '評論'
             },
             'sports': {
                 'title': '.news_content h1',
                 'date': '.news_content .c_box .c_time',
-                'body': '.whitecon.boxTitle .text p',
+                'body': '.news_content .news_p p',
                 'img': '.news_content img',
                 'cat': '體育'
             },
