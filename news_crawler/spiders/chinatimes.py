@@ -33,6 +33,8 @@ class ChinaTimesSpider(scrapy.Spider):
         self.start_urls = get_start_urls(st, ed)
         self.directory =  out
         self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
+        self.start_date = st
+        self.end_date = ed
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
@@ -52,6 +54,9 @@ class ChinaTimesSpider(scrapy.Spider):
         title = soup.select('.topich1 h1')[0].text.strip()
         date = soup.select('.reporter time')[0]['datetime'].split()[0]
         date = date.replace('/', '-')
+        if date < self.start_date or date > self.end_date:
+            return
+
         img = select_image(soup, 'article img')
         if img and img.startswith('//'):
             img = 'https:' + img

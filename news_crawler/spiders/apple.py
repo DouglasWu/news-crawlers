@@ -29,6 +29,8 @@ class AppleSpider(scrapy.Spider):
         self.start_urls = get_start_urls(st, ed)
         self.directory =  out
         self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
+        self.start_date = st
+        self.end_date = ed
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
@@ -73,6 +75,9 @@ class AppleSpider(scrapy.Spider):
                 [e.extract() for e in soup.select(tag)]
 
             body = '\n'.join([p.text.strip() for p in soup.select('.ndArticle_margin p') if p.text.strip()!='']).strip()
+
+        if date < self.start_date or date > self.end_date:
+            return
 
         yield {
             'title': title,

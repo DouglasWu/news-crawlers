@@ -8,9 +8,6 @@ from news_crawler.spiders.utils import (
     daterange, today_date, yesterday_date, get_general_cat, select_image
 )
 
-# TODO: The structure of the website has been changed.
-# Need to rewrite code.
-
 HOST_URL = 'https://news.ltn.com.tw'
 ARCHIVE_URL = 'https://news.ltn.com.tw/list/newspaper/{}/{}'
 CP_NAME = '自由時報'
@@ -43,6 +40,8 @@ class LtnSpider(scrapy.Spider):
         self.start_urls = get_start_urls(st, ed)
         self.directory =  out
         self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
+        self.start_date = st
+        self.end_date = ed
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
@@ -120,6 +119,9 @@ class LtnSpider(scrapy.Spider):
         title = soup.select(selector['title'])[0].text.strip()
         date = soup.select(selector['date'])[0].text.split()[0].strip()
         date = date.replace('/', '-')
+        if date < self.start_date or date > self.end_date:
+            return
+
         body = '\n'.join(p.text.strip() for p in soup.select(selector['body']))
         img = select_image(soup, selector['img'])
         if 'cat' in selector:
