@@ -27,6 +27,9 @@ def today_date():
 def yesterday_date():
     return (datetime.now() + timedelta(-1)).strftime("%Y-%m-%d")
 
+def now_time():
+    return datetime.now().strftime("%Y%m%dT%H%M")
+
 def get_general_cat(text):
     """ Classify the given text to one of the 9 main categories:
     國內,論壇,生活,國際,藝文,娛樂,理財,科技,體育

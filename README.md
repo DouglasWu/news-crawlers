@@ -8,7 +8,7 @@ A web crawler of news from a variety of content providers written with Scrapy.
 ## Supported content providers
 - [蘋果日報](http://tw.news.appledaily.com)
 - ~~[中國時報](https://www.chinatimes.com)~~(網頁已改版)
-- [自由時報](https://www.ltn.com.tw/)
+- ~~[自由時報](https://www.ltn.com.tw/)~~(網頁已改版)
 
 ## Run
 ```shell

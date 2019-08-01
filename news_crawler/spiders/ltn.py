@@ -4,65 +4,77 @@ import urllib.request
 from bs4 import BeautifulSoup as bs
 import datetime
 import re
+import feedparser
 from news_crawler.spiders.utils import (
-    daterange, today_date, yesterday_date, get_general_cat, select_image
+    now_time, get_general_cat, select_image
 )
 
-HOST_URL = 'https://news.ltn.com.tw'
-ARCHIVE_URL = 'https://news.ltn.com.tw/list/newspaper/{}/{}'
+# HOST_URL = 'https://news.ltn.com.tw'
+# ARCHIVE_URL = 'https://news.ltn.com.tw/list/newspaper/{}/{}'
+RSS_URL = 'https://news.ltn.com.tw/rss/all.xml'
 CP_NAME = '自由時報'
 
-def get_cat_list():
-    # Retrieve the list of all news categories on the web
-    url = 'https://news.ltn.com.tw/list/newspaper'
-    with urllib.request.urlopen(url) as fp:
-        soup = bs(fp.read(), 'lxml')
-    urls = [a['href'] for a in soup.select('.newsSort.boxTitle li a')]
-    return [re.match('list/newspaper/([a-z]+)', url).group(1) for url in urls]
+# def get_cat_list():
+#     """ Retrieve the list of all news categories on the web """
+#     url = 'https://news.ltn.com.tw/list/newspaper'
+#     with urllib.request.urlopen(url) as fp:
+#         soup = bs(fp.read(), 'lxml')
+#     urls = [a['href'] for a in soup.select('.newsSort.boxTitle li a')]
+#     return [re.match('list/newspaper/([a-z]+)', url).group(1) for url in urls]
 
-def get_start_urls(start_date, end_date):
-    date_strings = []
-    for single_date in daterange(start_date, end_date):
-        date_strings.append(single_date.strftime("%Y%m%d"))
-    urls = []
-    for date_str in date_strings:
-        for cat in get_cat_list():
-            urls.append(ARCHIVE_URL.format(cat, date_str))
-    return urls
+def get_tm_date(t):
+    return '{}-{:02d}-{:02d}'.format(t.tm_year, t.tm_mon, t.tm_mday)
+
+def get_news_items():
+    """ Retrieve news URLs from RSS and filter out
+    those that have already been saved.
+    """
+    rss = feedparser.parse(RSS_URL)
+    items = []
+    for item in rss['entries']:
+        # TODO: ignore old URLs
+        items.append({
+            'url': item['link'],
+            'date': get_tm_date(item['published_parsed'])
+        })
+
+    return items
 
 class LtnSpider(scrapy.Spider):
     name = "ltn"
     
-    def __init__(self, st=yesterday_date(), ed=yesterday_date(), out='data', *args, **kwargs):
+    def __init__(self, out='data', *args, **kwargs):
         super(LtnSpider, self).__init__(*args, **kwargs)
-        
-        # get all archive pages of a specific date range
-        self.start_urls = get_start_urls(st, ed)
+
         self.directory =  out
-        self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
-        self.start_date = st
-        self.end_date = ed
+        self.file = 'news_{}_{}.ndjson'.format(self.name, now_time())
 
+    def start_requests(self):
+        for item in get_news_items():
+            yield scrapy.Request(item['url'], meta={'date': item['date']})
+
+    # def parse(self, response):
+    #     soup = bs(response.body, 'lxml')
+    #     # get all the links in the archive page
+    #     atags = soup.select('.whitecon.boxTitle ul.list li a.tit')
+    #     links = [HOST_URL + '/' + a['href'] for a in atags]
+    #     for link in links:
+    #         yield scrapy.Request(link, callback=self.parse_page)
+
+    #     next_page_node = soup.select('.pagination.boxTitle .p_next')
+    #     if len(next_page_node)>0:
+    #         next_page_url = next_page_node[0]['href']
+    #         if next_page_url.startswith('//'):
+    #             next_page_url = 'https:' + next_page_url
+    #         yield scrapy.Request(next_page_url, callback=self.parse)
+
+    # def parse_page(self, response):
     def parse(self, response):
-        soup = bs(response.body, 'lxml')
-        # get all the links in the archive page
-        atags = soup.select('.whitecon.boxTitle ul.list li a.tit')
-        links = [HOST_URL + '/' + a['href'] for a in atags]
-        for link in links:
-            yield scrapy.Request(link, callback=self.parse_page)
-
-        next_page_node = soup.select('.pagination.boxTitle .p_next')
-        if len(next_page_node)>0:
-            next_page_url = next_page_node[0]['href']
-            if next_page_url.startswith('//'):
-                next_page_url = 'https:' + next_page_url
-            yield scrapy.Request(next_page_url, callback=self.parse)
-
-    def parse_page(self, response):
         url = response.url
 
         soup = bs(response.body, 'lxml')
         [s.extract() for s in soup('script')]
+
 
         selectors = {
             'ec': {
@@ -93,6 +105,34 @@ class LtnSpider(scrapy.Spider):
                 'img': '.news_content img',
                 'cat': '影視'
             },
+            'partners': {
+                'title': 'article h1',
+                'date': '.news_content .author .date',
+                'body': '.news_content p',
+                'img': '.news_content img',
+                'cat': '影視'
+            },
+            '3c': {
+                'title': '.news_content h1',
+                'date': '.news_content .author .date',
+                'body': '.news_content p',
+                'img': '.news_content img',
+                'cat': '影視'
+            },
+            'playing': {
+                'title': '.news_content h1',
+                'date': '.news_content .author .date',
+                'body': '.news_content p',
+                'img': '.news_content img',
+                'cat': '影視'
+            },
+            'istyle': {
+                'title': '.news_content h1',
+                'date': '.news_content .author .date',
+                'body': '.news_content p',
+                'img': '.news_content img',
+                'cat': '影視'
+            },
             'other': {
                 'title': '.whitecon.articlebody h1',
                 'date': '.whitecon.articlebody .text .viewtime',
@@ -117,10 +157,7 @@ class LtnSpider(scrapy.Spider):
             selector = selectors['other']
 
         title = soup.select(selector['title'])[0].text.strip()
-        date = soup.select(selector['date'])[0].text.split()[0].strip()
-        date = date.replace('/', '-')
-        if date < self.start_date or date > self.end_date:
-            return
+        date = response.meta['date']
 
         body = '\n'.join(p.text.strip() for p in soup.select(selector['body']))
         img = select_image(soup, selector['img'])
