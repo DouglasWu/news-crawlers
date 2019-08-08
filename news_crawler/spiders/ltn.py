@@ -23,7 +23,7 @@ CP_NAME = '自由時報'
 #     return [re.match('list/newspaper/([a-z]+)', url).group(1) for url in urls]
 
 def get_tm_date(t):
-    return '{}-{:02d}-{:02d}'.format(t.tm_year, t.tm_mon, t.tm_mday)
+    return '{}-{:02d}-{:02d} {:02d}:{:02d}'.format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min)
 
 def get_news_items():
     """ Retrieve news URLs from RSS and filter out

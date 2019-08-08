@@ -1,68 +1,89 @@
 # -*- coding: utf-8 -*-
 import scrapy
 from bs4 import BeautifulSoup as bs
+import requests
 import datetime
 from news_crawler.spiders.utils import (
-    daterange, today_date, yesterday_date, get_general_cat, select_image
+    now_time, get_general_cat, select_image
 )
 
 # TODO: The structure of the website has been changed.
 # Need to rewrite code.
 
-HOST_URL = 'http://www.chinatimes.com'
-ARCHIVE_URL = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
+HOST_URL = 'https://www.chinatimes.com'
+# ARCHIVE_URL = 'http://www.chinatimes.com/history-by-date/{}-260{}?page={}'
+REALTIME_URL = 'https://www.chinatimes.com/realtimenews/?page={}'
 CP_NAME = '中國時報'
 
-def get_start_urls(start_date, end_date):
-    date_strings = []
-    for single_date in daterange(start_date, end_date):
-        date_strings.append(single_date.strftime("%Y-%m-%d"))
+def get_start_urls():
+    """ Get the news list urls of the 10 pages
+    """
     urls = []
-    for date_str in date_strings:
-        for aid in range(1,5):
-            urls.append(ARCHIVE_URL.format(date_str, aid, 1))
+    for page in range(1, 11):
+        urls.append(REALTIME_URL.format(page))
     return urls
+
+def get_news_items():
+    """ Retrieve news URLs from realtime news page
+    """
+    items = []
+    for page in range(1, 11):
+        r = requests.get(REALTIME_URL.format(page))
+        soup = bs(r.text, 'lxml')
+
+    rss = feedparser.parse(RSS_URL)
+    items = []
+    for item in rss['entries']:
+        # TODO: ignore old URLs
+        items.append({
+            'url': item['link'],
+            'date': get_tm_date(item['published_parsed'])
+        })
+
+    return items
 
 class ChinaTimesSpider(scrapy.Spider):
     name = "chinatimes"
     
-    def __init__(self, st=yesterday_date(), ed=yesterday_date(), out='data', *args, **kwargs):
+    def __init__(self, out='data', *args, **kwargs):
         super(ChinaTimesSpider, self).__init__(*args, **kwargs)
         
         # get all archive pages of a specific date range
-        self.start_urls = get_start_urls(st, ed)
+        self.start_urls = get_start_urls()
         self.directory =  out
-        self.file = 'news_{}_{}_{}.ndjson'.format(self.name, st, ed)
-        self.start_date = st
-        self.end_date = ed
+        self.file = 'news_{}_{}.ndjson'.format(self.name, now_time())
 
     def parse(self, response):
         soup = bs(response.body, 'lxml')
-        # get all the links in the archive page
-        links = [HOST_URL+link['href'] for link in soup.select('.listRight li h2 a')]
-        for link in links:
-            yield scrapy.Request(link, callback=self.parse_page)
+        elements = soup.select('.articlebox-compact > .row > .col')
+        
+        # filter out ads
+        elements = [e for e in elements if e.select_one('.meta-info')]
 
-        cur_page = int(response.url.split('=')[1])
-        total_page = int(soup.select('.pagination li a')[-1]['href'].split('=')[1])
-        if cur_page < total_page:
-            next_page_url = response.url.split('=')[0] + '=' + str(cur_page + 1)
-            yield scrapy.Request(next_page_url, callback=self.parse)
+        for e in elements:
+            url = HOST_URL + e.select_one('.title a')['href']
+            date = e.select_one('.meta-info time')['datetime']
+            title = e.select_one('.title').text.strip()
+
+            yield scrapy.Request(
+                url,
+                callback=self.parse_page,
+                meta={'date': date, 'title': title}
+            )
 
     def parse_page(self, response):
         soup = bs(response.body, 'lxml')
-        title = soup.select('.topich1 h1')[0].text.strip()
-        date = soup.select('.reporter time')[0]['datetime'].split()[0]
-        date = date.replace('/', '-')
-        if date < self.start_date or date > self.end_date:
-            return
+        
+        date = response.meta['date']
+        title = response.meta['title']
 
         img = select_image(soup, 'article img')
         if img and img.startswith('//'):
             img = 'https:' + img
 
-        cat = soup.select('.page_index li')[-1].text.strip()
+        cat = soup.select('.breadcrumb > .breadcrumb-item')[-1].text.strip()
         url = response.url
+
         body = '\n'.join([p.text.strip() for p in soup.select('article p') if p.text.strip()!='']).strip()
 
         yield {
