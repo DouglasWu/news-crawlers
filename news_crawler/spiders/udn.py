@@ -11,7 +11,7 @@ CP_NAME = '聯合報'
 
 def get_start_urls():
     urls = []
-    for page in range(2, 121):
+    for page in range(2, 12):
         urls.append(REALTIME_URL.format(page))
     return urls
 
