@@ -23,7 +23,19 @@ CP_NAME = '自由時報'
 #     return [re.match('list/newspaper/([a-z]+)', url).group(1) for url in urls]
 
 def get_tm_date(t):
-    return '{}-{:02d}-{:02d} {:02d}:{:02d}'.format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min)
+    '''
+    Parameters
+    ----------
+    t : str 
+        Sat, 28 Sep 2019 16:38:19 +0800
+
+    Returns
+    -------
+    t : str
+        2019-09-28 16:38:19
+    '''
+    struct_time = time.strptime(t,'%a, %d %b %Y %H:%M:%S %z')
+    return time.strftime('%Y-%m-%d %H:%M:%S', struct_time)
 
 def get_news_items():
     """ Retrieve news URLs from RSS and filter out
@@ -35,7 +47,7 @@ def get_news_items():
         # TODO: ignore old URLs
         items.append({
             'url': item['link'],
-            'date': get_tm_date(item['published_parsed'])
+            'date': get_tm_date(item['published'])
         })
 
     return items
