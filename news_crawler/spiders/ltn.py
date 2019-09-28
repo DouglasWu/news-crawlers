@@ -3,6 +3,7 @@ import scrapy
 import urllib.request
 from bs4 import BeautifulSoup as bs
 import datetime
+import time
 import re
 import feedparser
 from news_crawler.spiders.utils import (
