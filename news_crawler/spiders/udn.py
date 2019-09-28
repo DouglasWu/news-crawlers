@@ -6,15 +6,13 @@ from news_crawler.spiders.utils import (
 
 HOST_URL = "https://udn.com"
 REALTIME_URL = 'https://udn.com/news/get_breaks_article/{}/1/0?_=1567733665389'
-CP_NAME = '聯合報'
-
+CP_NAME = '聯合新聞網'
 
 def get_start_urls():
     urls = []
     for page in range(2, 12):
         urls.append(REALTIME_URL.format(page))
     return urls
-
 
 class UdnCrawler(scrapy.Spider):
     name = "udn"
