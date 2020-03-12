@@ -1,16 +1,17 @@
 import scrapy
 from bs4 import BeautifulSoup
+import json
 from news_crawler.spiders.utils import (
     now_time, get_general_cat
 )
 
 HOST_URL = "https://udn.com"
-REALTIME_URL = 'https://udn.com/news/get_breaks_article/{}/1/0?_=1567733665389'
+REALTIME_URL = 'https://udn.com/api/more?page={}&id=&channelId=1&cate_id=0&type=breaknews&totalRecNo=10'
 CP_NAME = '聯合新聞網'
 
 def get_start_urls():
     urls = []
-    for page in range(2, 12):
+    for page in range(1, 35):
         urls.append(REALTIME_URL.format(page))
     return urls
 
@@ -26,35 +27,34 @@ class UdnCrawler(scrapy.Spider):
         self.file = 'news_{}_{}.ndjson'.format(self.name, now_time())
 
     def parse(self, response):
-        soup = BeautifulSoup(response.body, "lxml")
-        elements = soup.find_all("dt")
+        data = json.loads(response.body_as_unicode())
+        elements = data["lists"]
         for e in elements:
-            url = HOST_URL + e.find("a")["href"]
-            title = e.find("h2").text
-            cat = e.find("a", attrs={"class": "cate"}).text
-            img = e.find("img")["src"]
+            url = HOST_URL + e["titleLink"]
+            title = e["title"]
+            img = e["url"]
+            date = e["time"]["date"]
 
             yield scrapy.Request(
                 url,
                 callback=self.parse_page,
-                meta={"title": title, "cat": cat, "img": img}
+                meta={"title": title, "img": img, "date": date}
             )
 
     def parse_page(self, response):
         url = response.url
-        soup = BeautifulSoup(response.body, "lxml")
 
         title = response.meta["title"]
-        cat = response.meta["cat"]
         img = response.meta["img"]
+        date = response.meta["date"]
 
+        text = response.text.split('<!-- end of articles -->')
+        soup = BeautifulSoup(text[0], "lxml")
         body_elements = soup.find_all("p")
         body = [res.text.strip() for res in body_elements]
-        body = [b for b in body if b != ""]  # remove empty content
+        body = [b for b in body if b != ""]
         body = "\n".join(body)
-
-        date_element = soup.find("div", attrs={"class": "story_bady_info_author"})
-        date = date_element.find("span").text
+        cat = soup.find("title").text.split("|")[2].strip()
 
         yield {
             "title": title,
