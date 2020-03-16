@@ -1,6 +1,7 @@
 import scrapy
 from bs4 import BeautifulSoup
 import json
+import re
 from news_crawler.spiders.utils import (
     now_time, get_general_cat
 )
@@ -55,13 +56,20 @@ class UdnCrawler(scrapy.Spider):
         body = [b for b in body if b != ""]
         body = "\n".join(body)
         cat = soup.find("title").text.split("|")[2].strip()
-
-        yield {
-            "title": title,
-            "date": date,
-            "url": url,
-            "body": body,
-            "img": img,
-            "cat": get_general_cat(cat),
-            "cp": CP_NAME
-        }
+        if body[:6] != "window":
+            yield {
+                "title": title,
+                "date": date,
+                "url": url,
+                "body": body,
+                "img": img,
+                "cat": get_general_cat(cat),
+                "cp": CP_NAME
+            }
+        else:
+            url = re.sub('.*(http.*)";.*', "\\1", body)
+            yield scrapy.Request(
+                url,
+                callback=self.parse_page,
+                meta={"title": title, "img": img, "date": date}
+            )
